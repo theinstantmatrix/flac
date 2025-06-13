@@ -1,0 +1,44 @@
+name: Build FLAC (Windows ARM64/AArch64)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-winarm64:
+    runs-on: windows-11-arm
+    steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          install: >-
+            mingw-w64-clang-aarch64-autotools
+            mingw-w64-clang-aarch64-clang
+            mingw-w64-clang-aarch64-libogg
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          ./autogen.sh
+          ./configure --enable-static --disable-shared
+          LDFLAGS='-all-static' make -j4
+      - name: Copy files
+        shell: msys2 {0}
+        run: |
+          mkdir upload
+          cp src/flac/flac.exe upload
+          cp src/metaflac/metaflac.exe upload
+          strip upload/*.exe
+      - name: Upload as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flac-git-winarm64-${{github.sha}}
+          path: upload
+          if-no-files-found: error
