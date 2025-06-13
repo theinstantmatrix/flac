@@ -1,0 +1,53 @@
+name: Build FLAC
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-11-arm
+            ARTIFACT_PREFIX: winarm64
+            MSYS2_SYS: CLANGARM64
+          - os: windows-latest
+            ARTIFACT_PREFIX: win64
+            MSYS2_SYS: UCRT64
+    steps:
+      - name: 'Configure git: core.autocrlf, core.eol'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.MSYS2_SYS}}
+          update: true
+          pacboy: >-
+            autotools:p
+            libogg:p
+            toolchain:p
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          ./autogen.sh
+          ./configure --enable-static --disable-shared
+          mingw32-make LDFLAGS='-all-static'
+      - name: Copy files
+        shell: msys2 {0}
+        run: |
+          mkdir upload
+          cp COPYING.GPL upload/copying.txt
+          cp src/flac/flac.exe upload
+          cp src/metaflac/metaflac.exe upload
+          strip upload/*.exe
+      - name: Upload as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flac-git-${{matrix.ARTIFACT_PREFIX}}-${{github.sha}}
+          path: upload
+          if-no-files-found: error
