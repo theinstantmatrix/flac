@@ -1,3 +1,8 @@
+flac (with unofficial binaries for Windows ARM64/AArch64 + x86-64, fork of [xiph/flac](https://github.com/xiph/flac)).  
+Downloads are hosted at the [releases](https://github.com/theinstantmatrix/flac/releases) section.
+
+---
+
 <!---
 /* FLAC - Free Lossless Audio Codec
  * Copyright (C) 2001-2009  Josh Coalson
